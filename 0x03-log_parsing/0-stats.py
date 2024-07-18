@@ -1,44 +1,35 @@
-!/usr/bin/python3
-"""
-Log parsing
-"""
+#!/usr/bin/python3
+
 import sys
 
+# Initialize variables
+total_size = 0
+status_code_count = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
 
-def print_metrics(file_size, status_codes):
-    """
-    Print metrics
-    """
-    print("File size: {}".format(file_size))
-    codes_sorted = sorted(status_codes.keys())
-    for code in codes_sorted:
-        if status_codes[code] > 0:
-            print("{}: {}".format(code, status_codes[code]))
+try:
+    for idx, line in enumerate(sys.stdin, start=1):
+        # Parse the line
+        parts = line.split()
+        if len(parts) < 7:
+            continue
+        status_code = int(parts[-2])
+        file_size = int(parts[-1])
 
+        # Update total file size
+        total_size += file_size
 
-codes_count = {'200': 0, '301': 0, '400': 0, '401': 0,
-               '403': 0, '404': 0, '405': 0, '500': 0}
-file_size_total = 0
-count = 0
+        # Update status code count
+        if status_code in status_code_count:
+            status_code_count[status_code] += 1
 
-if __name__ == "__main__":
-    try:
-        for line in sys.stdin:
-            try:
-                status_code = line.split()[-2]
-                if status_code in codes_count.keys():
-                    codes_count[status_code] += 1
-                # Grab file size
-                file_size = int(line.split()[-1])
-                file_size_total += file_size
-            except Exception:
-                pass
-            # print metrics if 10 lines have been read
-            count += 1
-            if count == 10:
-                print_metrics(file_size_total, codes_count)
-                count = 0
-    except KeyboardInterrupt:
-        print_metrics(file_size_total, codes_count)
-        raise
-   print_metrics(file_size_total, codes_count)
+        # Check if 10 lines have been processed
+        if idx % 10 == 0:
+            print(f"Total file size: {total_size}")
+            for code in sorted(status_code_count.keys()):
+                if status_code_count[code] > 0:
+                    print(f"{code}: {status_code_count[code]}")
+except KeyboardInterrupt:
+    print(f"Total file size: {total_size}")
+    for code in sorted(status_code_count.keys()):
+        if status_code_count[code] > 0:
+            print(f"{code}: {status_code_count[code]}")
